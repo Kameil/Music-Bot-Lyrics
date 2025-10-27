@@ -58,7 +58,7 @@ class Events(commands.Cog):
                 text = match.group(2)
                 parsed.append((timestamp, text))
         parsed.sort(key=lambda x: x[0])
-        print(f"Parse completo: {len(parsed)} linhas com timestamps")
+        # print(f"Parse completo: {len(parsed)} linhas com timestamps")
         return parsed
 
     @tasks.loop(seconds=0.5)
@@ -83,6 +83,9 @@ class Events(commands.Cog):
             self.chat_lyric_indices[channel_id] = index
             if index >= len(parsed_lyrics):
                 print(f"Todas as linhas enviadas para canal {channel_id}, removendo dados")
+                channel = self.bot.get_channel(channel_id)
+                if channel:
+                    await channel.send("Finished sending lyrics.")
                 self.chats_times.pop(channel_id)
                 self.chat_letra_atual.pop(channel_id)
                 self.chat_lyric_indices.pop(channel_id, None)
@@ -96,6 +99,8 @@ class Events(commands.Cog):
                     print(f"Embed detectado em {message.channel.id}")
                     artist, track = self.get_embed_track_info(embed)
                     if artist and track:
+                        embed = discord.Embed(description=f"Gettingn lyrics for **{track}** **by** **{artist}**...", color=discord.Color.green())
+                        await message.reply(embed=embed)
                         self.chats_times[message.channel.id] = message.created_at
                         self.chat_letra_atual[message.channel.id] = await self.get_track_lyrics(artist, track)
                         self.chat_lyric_indices[message.channel.id] = 0

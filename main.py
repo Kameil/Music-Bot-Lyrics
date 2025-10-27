@@ -53,21 +53,10 @@ async def sync_commands():
 @bot.event
 async def on_ready():
     await load_cogs()
+    print(f"Bot conectado como {bot.user} (ID: {bot.user.id})")
     synced_commands = await sync_commands()
-    print.info(f"Bot conectado como {bot.user} (ID: {bot.user.id})")
+    
 
 
 
-async def main():
-    try:
-        await bot.start(token=token)
-    except discord.errors.LoginFailure:
-        print("\033[31mToken inválido. Confere o config.py!\033[0m")
-    except Exception as e:
-        print(f"Erro ao iniciar o bot: {e}", exc_info=True)
-    finally:
-        if not bot.is_closed():
-            await bot.close()
-
-if __name__ == "__main__":
-    asyncio.run(main())
+bot.run(token)
