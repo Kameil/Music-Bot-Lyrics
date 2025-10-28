@@ -95,15 +95,32 @@ class Events(commands.Cog):
         if message.author.bot and message.author.id in [412347257233604609, 411916947773587456]:
             if message.embeds:
                 embed = message.embeds[0]
-                if embed.description and "Started playing" in embed.description:
-                    print(f"Embed detectado em {message.channel.id}")
-                    artist, track = self.get_embed_track_info(embed)
-                    if artist and track:
-                        embed = discord.Embed(description=f"Gettingn lyrics for **{track}** **by** **{artist}**...", color=discord.Color.green())
-                        await message.reply(embed=embed)
-                        self.chats_times[message.channel.id] = message.created_at
-                        self.chat_letra_atual[message.channel.id] = await self.get_track_lyrics(artist, track)
-                        self.chat_lyric_indices[message.channel.id] = 0
+                if embed.description:
+                    desc = embed.description
+                    if "There are no more tracks" in desc:
+                        channel_id = message.channel.id
+                        print(f"'There are no more tracks' detectado em {channel_id}. Limpando...")
+                        channel = self.bot.get_channel(channel_id)
+                        if channel:
+                            await channel.send("Finished sending lyrics.")
+                        
+                        self.chats_times.pop(channel_id, None)
+                        self.chat_letra_atual.pop(channel_id, None)
+                        self.chat_lyric_indices.pop(channel_id, None)
+                        return 
+
+                    if "Started playing" in desc:
+                        print(f"Embed detectado em {message.channel.id}")
+                        artist, track = self.get_embed_track_info(embed)
+                        if artist and track:
+                            embed = discord.Embed(
+                                description=f"Getting lyrics for **{track}** by **{artist}**...",
+                                color=discord.Color.green()
+                            )
+                            await message.reply(embed=embed)
+                            self.chats_times[message.channel.id] = message.created_at
+                            self.chat_letra_atual[message.channel.id] = await self.get_track_lyrics(artist, track)
+                            self.chat_lyric_indices[message.channel.id] = 0
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(Events(bot))
