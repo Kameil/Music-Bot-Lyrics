@@ -92,7 +92,7 @@ class Events(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
-        if message.author.bot and message.author.id == 412347257233604609:
+        if message.author.bot and message.author.id in [412347257233604609, 411916947773587456]:
             if message.embeds:
                 embed = message.embeds[0]
                 if embed.description and "Started playing" in embed.description:
