@@ -25,6 +25,7 @@ class track(commands.Cog):
         # 2. Pegar capa do Cover Art Archive
         try:
             art = musicbrainzngs.get_image_list(release_id)
+            musicbrainzngs.get
             return art["images"][0]["image"]
         except musicbrainzngs.ResponseError:
             return None
@@ -39,8 +40,7 @@ class track(commands.Cog):
             "format": "json"
         }
 
-        musicbrainzngs.set_useragent("Stihovi", "1.0")
-        msc_brnz_track = musicbrainzngs.search_releases(artist=artist, release=track, limit=1)
+
 
         response = await self.client.get(url, params=params, headers={"User-Agent": "RaquisonMusicFetcher/1.0"}, timeout=30)
         response.raise_for_status()
