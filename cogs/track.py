@@ -70,9 +70,5 @@ class track(commands.Cog):
         except Exception as e:
             await inter.followup.send(f"An error occurred: {e}")
 
-
-
-        
-
 async def setup(bot: commands.Bot):
     await bot.add_cog(track(bot))
