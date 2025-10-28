@@ -6,60 +6,61 @@ import httpx
 import musicbrainzngs
 import asyncio
 import traceback
+from musicbrainzngs import ResponseError, NetworkError 
 
 class track(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.client = httpx.AsyncClient()
 
-async def get_cover_url(self, artist, track):
-        
-        # 1. Buscar a gravação (agora em um thread separado)
-        try:
-            # Use asyncio.to_thread para a chamada bloqueante
-            result = await asyncio.to_thread(
-                musicbrainzngs.search_recordings,
-                artist=artist,
-                recording=track,
-                limit=1
-            )
-        except Exception as e:
-            traceback.print_exc()
-            print(f"Retuning None due to error in musicbrainzngs search: {e}")
-            return None
-
-        # A lógica de verificação continua a mesma
-        if not result.get("recording-list"):
-            return None
-        
-        recording = result["recording-list"][0]
-        if "release-list" not in recording or not recording["release-list"]:
-            return None
-
-        release_id = recording["release-list"][0]["id"]
-
-        # 2. Pegar capa do Cover Art Archive (também em um thread)
-        try:
-            # Use asyncio.to_thread para a segunda chamada bloqueante
-            art = await asyncio.to_thread(
-                musicbrainzngs.get_image_list,
-                release_id
-            )
+    async def get_cover_url(self, artist, track):
             
-            # (Notei que havia um 'musicbrainzngs.get' perdido no seu original, eu removi)
+            # 1. Buscar a gravação (agora em um thread separado)
+            try:
+                # Use asyncio.to_thread para a chamada bloqueante
+                result = await asyncio.to_thread(
+                    musicbrainzngs.search_recordings,
+                    artist=artist,
+                    recording=track,
+                    limit=1
+                )
+            except Exception as e:
+                traceback.print_exc()
+                print(f"Retuning None due to error in musicbrainzngs search: {e}")
+                return None
+
+            # A lógica de verificação continua a mesma
+            if not result.get("recording-list"):
+                return None
             
-            # Verificação de segurança antes de acessar chaves
-            if art.get("images"):
-                return art["images"][0].get("image")
-            return None
-            
-        except ResponseError:
-            # Erro comum se o release não tiver arte (ex: 404)
-            return None
-        except (NetworkError, KeyError, IndexError) as e:
-            # Trata outros erros possíveis (rede, JSON malformado, etc.)
-            print(f"Erro ao buscar arte da capa: {e}")
-            return None
+            recording = result["recording-list"][0]
+            if "release-list" not in recording or not recording["release-list"]:
+                return None
+
+            release_id = recording["release-list"][0]["id"]
+
+            # 2. Pegar capa do Cover Art Archive (também em um thread)
+            try:
+                # Use asyncio.to_thread para a segunda chamada bloqueante
+                art = await asyncio.to_thread(
+                    musicbrainzngs.get_image_list,
+                    release_id
+                )
+                
+                # (Notei que havia um 'musicbrainzngs.get' perdido no seu original, eu removi)
+                
+                # Verificação de segurança antes de acessar chaves
+                if art.get("images"):
+                    return art["images"][0].get("image")
+                return None
+                
+            except ResponseError:
+                # Erro comum se o release não tiver arte (ex: 404)
+                return None
+            except (NetworkError, KeyError, IndexError) as e:
+                # Trata outros erros possíveis (rede, JSON malformado, etc.)
+                print(f"Erro ao buscar arte da capa: {e}")
+                return None
 
     async def last_fm_get_track(self, artist: str, track: str):
         url = "http://ws.audioscrobbler.com/2.0/"
