@@ -7,7 +7,7 @@ import musicbrainzngs
 import asyncio
 import traceback
 from musicbrainzngs import ResponseError, NetworkError 
-
+musicbrainzngs.set_useragent("Stihovi-track-search", "1.0")
 class track(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
