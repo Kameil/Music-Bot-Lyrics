@@ -14,7 +14,6 @@ class track(commands.Cog):
         self.client = httpx.AsyncClient()
 
     async def get_cover_url(self, artist, track):
-            
             # 1. Buscar a gravação (agora em um thread separado)
             try:
                 # Use asyncio.to_thread para a chamada bloqueante
@@ -22,7 +21,7 @@ class track(commands.Cog):
                     musicbrainzngs.search_recordings,
                     artist=artist,
                     recording=track,
-                    limit=1
+                    limit=1,
                 )
             except Exception as e:
                 traceback.print_exc()

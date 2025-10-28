@@ -2,3 +2,5 @@ config.py
 teste.py
 lteste.py
 zz
+__pycache__/
+cogs/__pycache__/
