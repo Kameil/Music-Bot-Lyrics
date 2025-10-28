@@ -97,20 +97,29 @@ class Events(commands.Cog):
                 embed = message.embeds[0]
                 if embed.description:
                     desc = embed.description
-                    if "There are no more tracks" in desc:
-                        channel_id = message.channel.id
-                        print(f"'There are no more tracks' detectado em {channel_id}. Limpando...")
-                        channel = self.bot.get_channel(channel_id)
-                        if channel:
-                            await channel.send("Finished sending lyrics.")
-                        
-                        self.chats_times.pop(channel_id, None)
-                        self.chat_letra_atual.pop(channel_id, None)
-                        self.chat_lyric_indices.pop(channel_id, None)
+                    channel_id = message.channel.id
+
+                    stop_phrases = [
+                        "There are no more tracks",
+                        "Thank you for using our service!"
+                    ]
+                    if any(phrase in desc for phrase in stop_phrases):
+                        # so age se o canal tem letra ativa
+                        if channel_id in self.chat_letra_atual and self.chat_letra_atual[channel_id]:
+                            print(f"[STOP] 'There are no more tracks' detectado em {channel_id}. Limpando...")
+                            channel = self.bot.get_channel(channel_id)
+                            if channel:
+                                await channel.send("Finished sending lyrics.")
+                            
+                            self.chats_times.pop(channel_id, None)
+                            self.chat_letra_atual.pop(channel_id, None)
+                            self.chat_lyric_indices.pop(channel_id, None)
+                        else:
+                            print(f"[STOP] 'There are no more tracks' detectada em {channel_id}, mas sem letra ativa | ignorando.")
                         return 
 
                     if "Started playing" in desc:
-                        print(f"Embed detectado em {message.channel.id}")
+                        print(f"Embed detectado em {channel_id}")
                         artist, track = self.get_embed_track_info(embed)
                         if artist and track:
                             embed = discord.Embed(
@@ -118,9 +127,9 @@ class Events(commands.Cog):
                                 color=discord.Color.green()
                             )
                             await message.reply(embed=embed)
-                            self.chats_times[message.channel.id] = message.created_at
-                            self.chat_letra_atual[message.channel.id] = await self.get_track_lyrics(artist, track)
-                            self.chat_lyric_indices[message.channel.id] = 0
+                            self.chats_times[channel_id] = message.created_at
+                            self.chat_letra_atual[channel_id] = await self.get_track_lyrics(artist, track)
+                            self.chat_lyric_indices[channel_id] = 0
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(Events(bot))
