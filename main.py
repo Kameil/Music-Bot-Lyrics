@@ -16,6 +16,11 @@ bot = commands.Bot(
     intents=intents,
 )
 
+bot.chats_times = {}
+bot.chat_letra_atual = {}
+bot.chat_lyric_indices = {}
+
+
 async def load_cogs():
     try:
         cogs_dir = "cogs"

@@ -10,9 +10,9 @@ class Events(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.client = httpx.AsyncClient()
-        self.chats_times = {}
-        self.chat_letra_atual = {}
-        self.chat_lyric_indices = {}
+        self.chats_times = bot.chats_times
+        self.chat_letra_atual = bot.chat_letra_atual
+        self.chat_lyric_indices = bot.chat_lyric_indices
         self.send_lyrics_loop.start()
 
     def get_embed_track_info(self, embed: discord.Embed):
