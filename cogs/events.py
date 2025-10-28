@@ -129,6 +129,12 @@ class Events(commands.Cog):
                             await message.reply(embed=embed)
                             self.chats_times[channel_id] = message.created_at
                             self.chat_letra_atual[channel_id] = await self.get_track_lyrics(artist, track)
+                            if self.chat_letra_atual[channel_id] == "":
+                                embed = discord.Embed(
+                                    description=f"Lyrics not found for **{track}** by **{artist}**.",
+                                    color=discord.Color.red()
+                                )
+                                await message.reply(embed=embed)
                             self.chat_lyric_indices[channel_id] = 0
 
 async def setup(bot: commands.Bot):
