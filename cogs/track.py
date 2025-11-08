@@ -7,59 +7,59 @@ import musicbrainzngs
 import asyncio
 import traceback
 from musicbrainzngs import ResponseError, NetworkError 
+
 musicbrainzngs.set_useragent("Stihovi-track-search", "1.0")
+
 class track(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.client = httpx.AsyncClient()
 
     async def get_cover_url(self, artist, track):
-            # 1. Buscar a gravação (agora em um thread separado)
-            try:
-                # Use asyncio.to_thread para a chamada bloqueante
-                result = await asyncio.to_thread(
-                    musicbrainzngs.search_recordings,
-                    artist=artist,
-                    recording=track,
-                    limit=1,
-                )
-            except Exception as e:
-                traceback.print_exc()
-                print(f"Retuning None due to error in musicbrainzngs search: {e}")
-                return None
+        # 1. search for recording (now in a separate thread)
+        try:
+            # use asyncio.to_thread for blocking call
+            result = await asyncio.to_thread(
+                musicbrainzngs.search_recordings,
+                artist=artist,
+                recording=track,
+                limit=1,
+            )
+        except Exception as e:
+            traceback.print_exc()
+            print(f"Returning None due to error in musicbrainzngs search: {e}")
+            return None
 
-            # A lógica de verificação continua a mesma
-            if not result.get("recording-list"):
-                return None
+        # the verification logic remains the same
+        if not result.get("recording-list"):
+            return None
+        
+        recording = result["recording-list"][0]
+        if "release-list" not in recording or not recording["release-list"]:
+            return None
+
+        release_id = recording["release-list"][0]["id"]
+
+        # 2. get cover from Cover Art Archive (also in a thread)
+        try:
+            # use asyncio.to_thread for the second blocking call
+            art = await asyncio.to_thread(
+                musicbrainzngs.get_image_list,
+                release_id
+            )
             
-            recording = result["recording-list"][0]
-            if "release-list" not in recording or not recording["release-list"]:
-                return None
-
-            release_id = recording["release-list"][0]["id"]
-
-            # 2. Pegar capa do Cover Art Archive (também em um thread)
-            try:
-                # Use asyncio.to_thread para a segunda chamada bloqueante
-                art = await asyncio.to_thread(
-                    musicbrainzngs.get_image_list,
-                    release_id
-                )
-                
-                # (Notei que havia um 'musicbrainzngs.get' perdido no seu original, eu removi)
-                
-                # Verificação de segurança antes de acessar chaves
-                if art.get("images"):
-                    return art["images"][0].get("image")
-                return None
-                
-            except ResponseError:
-                # Erro comum se o release não tiver arte (ex: 404)
-                return None
-            except (NetworkError, KeyError, IndexError) as e:
-                # Trata outros erros possíveis (rede, JSON malformado, etc.)
-                print(f"Erro ao buscar arte da capa: {e}")
-                return None
+            # security check before accessing keys
+            if art.get("images"):
+                return art["images"][0].get("image")
+            return None
+            
+        except ResponseError:
+            # common error if release doesn't have art (e.g., 404)
+            return None
+        except (NetworkError, KeyError, IndexError) as e:
+            # handle other possible errors (network, malformed JSON, etc.)
+            print(f"Error fetching cover art: {e}")
+            return None
 
     async def last_fm_get_track(self, artist: str, track: str):
         url = "http://ws.audioscrobbler.com/2.0/"
@@ -70,8 +70,6 @@ class track(commands.Cog):
             "track": track,
             "format": "json"
         }
-
-
 
         response = await self.client.get(url, params=params, headers={"User-Agent": "RaquisonMusicFetcher/1.0"}, timeout=30)
         response.raise_for_status()
