@@ -6,23 +6,23 @@ import discord
 from discord.ext import commands
 from config import token
 
-intents = discord.Intents.all()
-intents.messages = True
+
+intents = discord.Intents.default()
 intents.message_content = True
+intents.members = True
 intents.guilds = True
 
-class Bot(commands.Bot):
-    chats_times: dict[int, Any]         
-    chat_letra_atual: dict[int, str]
-    chat_lyric_indices: dict[int, int]
-    cogs_loaded: bool
 
+class Bot(commands.Bot):
     def __init__(self, **kwargs: Any):
         super().__init__(**kwargs)
-        self.chats_times = {}
-        self.chat_letra_atual = {}
-        self.chat_lyric_indices = {}
-        self.cogs_loaded = False
+
+        self.chats_times: dict[int, Any] = {}
+        self.chat_letra_atual: dict[int, str] = {}
+        self.chat_lyric_indices: dict[int, int] = {}
+
+        self.cogs_loaded: bool = False
+
 
 bot = Bot(
     command_prefix="l.",
@@ -30,49 +30,58 @@ bot = Bot(
     intents=intents,
 )
 
+
 async def load_cogs() -> None:
     cogs_dir = "cogs"
+
     if not os.path.isdir(cogs_dir):
-        print(f"[COG] Directory '{cogs_dir}' does not exist. Ignoring.")
+        print(f"[COG] Directory '{cogs_dir}' does not exist. Skipping.")
         return
 
-    for file in sorted(os.listdir(cogs_dir)):
-        if not file.endswith(".py"):
-            continue
-        name = file[:-3]
-        try:
-            await bot.load_extension(f"{cogs_dir}.{name}")
-            print(f"[COG] ✅ '{name}' loaded.")
-        except Exception as e:
-            print(f"[COG] ❌ Error in '{name}': {e}")
+    for filename in sorted(os.listdir(cogs_dir)):
+        if filename.endswith(".py"):
+            cog_name = filename[:-3]
+            try:
+                await bot.load_extension(f"{cogs_dir}.{cog_name}")
+                print(f"[COG] ✔ Loaded: '{cog_name}'")
+            except Exception as e:
+                print(f"[COG] ✖ Error loading '{cog_name}': {e}")
 
-async def sync_commands() -> list[discord.app_commands.AppCommand]:
+
+async def sync_commands():
     try:
         synced = await bot.tree.sync()
-        print(f"[CMD] Synced: {len(synced)}")
+        print(f"[CMD] Synced {len(synced)} commands.")
         return synced
     except discord.HTTPException as e:
         print(f"[CMD] Sync failed: {e}")
         return []
 
+
 @bot.event
-async def on_ready() -> None:
+async def on_ready():
+    uid = getattr(bot.user, "id", "???")
+
     if bot.cogs_loaded:
-        uid = getattr(bot.user, "id", "???")
-        print(f"[READY] Bot already ready: {bot.user} (ID: {uid})")
+        print(f"[READY] Bot was already initialized: {bot.user} (ID: {uid})")
         return
 
-    uid = getattr(bot.user, "id", "???")
-    print(f"[READY] Connected as {bot.user} (ID: {uid}) — loading cogs...")
+    print(f"[READY] Logged in as {bot.user} (ID: {uid})")
+    print("[READY] Loading extensions...")
+
     await load_cogs()
-    print("[READY] Cogs loaded. Syncing commands...")
+
+    print("[READY] Extensions loaded. Syncing commands...")
     await sync_commands()
+
     bot.cogs_loaded = True
-    print("[READY] Setup completed.")
+    print("[READY] Initialization complete.")
+
 
 async def main() -> None:
     async with bot:
         await bot.start(token)
+
 
 if __name__ == "__main__":
     asyncio.run(main())
