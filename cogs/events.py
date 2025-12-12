@@ -22,6 +22,22 @@ class Events(commands.Cog):
             return match.group(2), match.group(1) # artist, track
         return None, None
 
+    async def get_track_cover_url(self, artist: str, track: str) -> str:
+        url = "https://musicbrainz.org/ws/2/recording"
+        params = {"query": f'recording:"{track}" AND artist:"{artist}"', "fmt": "json", "limit": 1}
+        response = await self.client.get(url, params=params, headers={"User-Agent": "RaquisonMusicFetcher/1.0"}, timeout=30)
+        data = response.json()
+        print("Buscando cover art...")
+        if response.status_code == 200 and data.get("recordings"):
+            recording = data["recordings"][0]
+            if "releases" in recording and recording["releases"]:
+                release = recording["releases"][0]
+                if "id" in release:
+                    mbid = release["id"]
+                    cover_url = f"https://coverartarchive.org/release/{mbid}/front-250"
+                    print(f"Cover art encontrada: {cover_url}")
+                    return cover_url
+
     async def get_track_lyrics(self, artist: str, track: str) -> str:
         print(f"Buscando letra de {track} por {artist}...")
         url = "https://lrclib.net/api/search"
@@ -126,14 +142,16 @@ class Events(commands.Cog):
                                 description=f"Getting lyrics for **{track}** by **{artist}**...",
                                 color=discord.Color.green()
                             )
+                            embed.set_image(url=await self.get_track_cover_url(artist, track) or discord.Embed.Empty)
                             await message.reply(embed=embed)
                             self.chats_times[channel_id] = message.created_at
                             self.chat_letra_atual[channel_id] = await self.get_track_lyrics(artist, track)
                             if self.chat_letra_atual[channel_id] == "":
                                 embed = discord.Embed(
                                     description=f"Lyrics not found for **{track}** by **{artist}**.",
-                                    color=discord.Color.red()
+                                    color=discord.Color.red(),
                                 )
+                                embed.set_image(url=await self.get_track_cover_url(artist, track) or discord.Embed.Empty)
                                 await message.reply(embed=embed)
                             self.chat_lyric_indices[channel_id] = 0
 
