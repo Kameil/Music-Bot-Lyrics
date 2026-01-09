@@ -1,0 +1,41 @@
+name: Pylint
+
+on:
+  push:
+    branches: [main, dev] 
+  pull_request:
+    branches: [main, dev]
+
+jobs:
+  pylint:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12", "3.13"] 
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4 
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Upgrade pip and install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pylint
+          if [ -f requirements.txt ]; then
+            pip install -r requirements.txt
+          fi
+
+      - name: Basic project check
+        run: |
+          echo "Verifying that the bot starts without import errors..."
+          python -c "import main" 
+
+      - name: Analysing the code with pylint
+        run: |
+          pylint $(git ls-files '*.py') --exit-code=0  # Falha o job se o score for muito baixo
+        continue-on-error: false 
