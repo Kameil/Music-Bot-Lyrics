@@ -30,12 +30,16 @@ jobs:
             pip install -r requirements.txt
           fi
 
-      - name: Basic project check
+      - name: Basic project check (import test)
         run: |
-          echo "Creating temporary config.example.py for import test..."
-          cat << EOF > config.example.py
+          echo "Creating temporary config package for import test..."
+          mkdir -p config
+          cat << EOF > config/__init__.py
           token = "fake_token_for_ci_only"
-          # Add other fake variables here if needed (e.g., prefix, owner_id, etc.)
+          last_fm_application_name = "fake_application_name"
+          last_fm_API_key = "fake_api_key_1234567890"
+          last_fm_shared_secret = "fake_shared_secret_abcdef"
+          Registered_to = "CI Test Bot"
           EOF
           echo "Verifying that the bot starts without import errors..."
           python -c "import main"
