@@ -1,10 +1,11 @@
-import discord
-from discord.ext import commands, tasks
-import httpx
-import re
-import io
 import datetime
+import re
 from datetime import timezone
+
+import discord
+import httpx
+from discord.ext import commands, tasks
+
 
 class Events(commands.Cog):
     def __init__(self, bot: commands.Bot):
@@ -16,16 +17,27 @@ class Events(commands.Cog):
         self.send_lyrics_loop.start()
 
     def get_embed_track_info(self, embed: discord.Embed):
-        match = re.search(r'playing \[\*\*(.+?)\*\*\s+\*\*by\*\*\s+\*\*(.+?)\*\*\]', embed.description)
+        match = re.search(
+            r"playing \[\*\*(.+?)\*\*\s+\*\*by\*\*\s+\*\*(.+?)\*\*\]", embed.description
+        )
         if match:
             print(f"Extraindo info do embed: {match.group(2)} por {match.group(1)}")
-            return match.group(2), match.group(1) # artist, track
+            return match.group(2), match.group(1)  # artist, track
         return None, None
 
     async def get_track_cover_url(self, artist: str, track: str) -> str:
         url = "https://musicbrainz.org/ws/2/recording"
-        params = {"query": f'recording:"{track}" AND artist:"{artist}"', "fmt": "json", "limit": 1}
-        response = await self.client.get(url, params=params, headers={"User-Agent": "RaquisonMusicFetcher/1.0"}, timeout=30)
+        params = {
+            "query": f'recording:"{track}" AND artist:"{artist}"',
+            "fmt": "json",
+            "limit": 1,
+        }
+        response = await self.client.get(
+            url,
+            params=params,
+            headers={"User-Agent": "RaquisonMusicFetcher/1.0"},
+            timeout=30,
+        )
         data = response.json()
         print("Buscando cover art...")
         if response.status_code == 200 and data.get("recordings"):
@@ -42,9 +54,13 @@ class Events(commands.Cog):
         print(f"Buscando letra de {track} por {artist}...")
         url = "https://lrclib.net/api/search"
         params = {"track_name": track, "artist_name": artist}
-        response = await self.client.get(url, params=params, headers={"User-Agent": "RaquisonMusicFetcher/1.0"}, timeout=30)
+        response = await self.client.get(
+            url,
+            params=params,
+            headers={"User-Agent": "RaquisonMusicFetcher/1.0"},
+            timeout=30,
+        )
         print(f"Status da requisição: {response.status_code}")
-        
 
         if response.status_code == 200:
             try:
@@ -63,14 +79,14 @@ class Events(commands.Cog):
         return ""
 
     def parse_lyrics(self, raw_lyrics: str):
-        pattern = r'\[(\d{2}:\d{2}\.\d{2})\]\s*(.*)'
+        pattern = r"\[(\d{2}:\d{2}\.\d{2})\]\s*(.*)"
         parsed = []
         for line in raw_lyrics.splitlines():
             match = re.match(pattern, line)
             if match:
-                minutes, rest = match.group(1).split(':')
-                seconds, ms = rest.split('.')
-                timestamp = int(minutes)*60 + int(seconds) + int(ms)/100
+                minutes, rest = match.group(1).split(":")
+                seconds, ms = rest.split(".")
+                timestamp = int(minutes) * 60 + int(seconds) + int(ms) / 100
                 text = match.group(2)
                 parsed.append((timestamp, text))
         parsed.sort(key=lambda x: x[0])
@@ -88,17 +104,24 @@ class Events(commands.Cog):
             parsed_lyrics = self.parse_lyrics(lyrics)
             index = self.chat_lyric_indices.get(channel_id, 0)
 
-            while index < len(parsed_lyrics) and (now - start_time).total_seconds() >= parsed_lyrics[index][0]:
+            while (
+                index < len(parsed_lyrics)
+                and (now - start_time).total_seconds() >= parsed_lyrics[index][0]
+            ):
                 channel = self.bot.get_channel(channel_id)
                 if channel:
-                    print(f"[{(now - start_time).total_seconds():.2f}s] Enviando linha para canal {channel_id}: {parsed_lyrics[index][1]}")
+                    print(
+                        f"[{(now - start_time).total_seconds():.2f}s] Enviando linha para canal {channel_id}: {parsed_lyrics[index][1]}"
+                    )
                     if parsed_lyrics[index][1].strip():
                         await channel.send(parsed_lyrics[index][1])
                 index += 1
 
             self.chat_lyric_indices[channel_id] = index
             if index >= len(parsed_lyrics):
-                print(f"Todas as linhas enviadas para canal {channel_id}, removendo dados")
+                print(
+                    f"Todas as linhas enviadas para canal {channel_id}, removendo dados"
+                )
                 channel = self.bot.get_channel(channel_id)
                 if channel:
                     await channel.send("Finished sending lyrics.")
@@ -108,7 +131,10 @@ class Events(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
-        if message.author.bot and message.author.id in [412347257233604609, 411916947773587456]:
+        if message.author.bot and message.author.id in [
+            412347257233604609,
+            411916947773587456,
+        ]:
             if message.embeds:
                 embed = message.embeds[0]
                 if embed.description:
@@ -117,22 +143,29 @@ class Events(commands.Cog):
 
                     stop_phrases = [
                         "There are no more tracks",
-                        "Thank you for using our service!"
+                        "Thank you for using our service!",
                     ]
                     if any(phrase in desc for phrase in stop_phrases):
                         # so age se o canal tem letra ativa
-                        if channel_id in self.chat_letra_atual and self.chat_letra_atual[channel_id]:
-                            print(f"[STOP] 'There are no more tracks' detectado em {channel_id}. Limpando...")
+                        if (
+                            channel_id in self.chat_letra_atual
+                            and self.chat_letra_atual[channel_id]
+                        ):
+                            print(
+                                f"[STOP] 'There are no more tracks' detectado em {channel_id}. Limpando..."
+                            )
                             channel = self.bot.get_channel(channel_id)
                             if channel:
                                 await channel.send("Finished sending lyrics.")
-                            
+
                             self.chats_times.pop(channel_id, None)
                             self.chat_letra_atual.pop(channel_id, None)
                             self.chat_lyric_indices.pop(channel_id, None)
                         else:
-                            print(f"[STOP] 'There are no more tracks' detectada em {channel_id}, mas sem letra ativa | ignorando.")
-                        return 
+                            print(
+                                f"[STOP] 'There are no more tracks' detectada em {channel_id}, mas sem letra ativa | ignorando."
+                            )
+                        return
 
                     if "Started playing" in desc:
                         print(f"Embed detectado em {channel_id}")
@@ -140,20 +173,29 @@ class Events(commands.Cog):
                         if artist and track:
                             embed = discord.Embed(
                                 description=f"Getting lyrics for **{track}** by **{artist}**...",
-                                color=discord.Color.green()
+                                color=discord.Color.green(),
                             )
-                            embed.set_image(url=await self.get_track_cover_url(artist, track) or discord.Embed.Empty)
+                            embed.set_image(
+                                url=await self.get_track_cover_url(artist, track)
+                                or discord.Embed.Empty
+                            )
                             await message.reply(embed=embed)
                             self.chats_times[channel_id] = message.created_at
-                            self.chat_letra_atual[channel_id] = await self.get_track_lyrics(artist, track)
+                            self.chat_letra_atual[channel_id] = (
+                                await self.get_track_lyrics(artist, track)
+                            )
                             if self.chat_letra_atual[channel_id] == "":
                                 embed = discord.Embed(
                                     description=f"Lyrics not found for **{track}** by **{artist}**.",
                                     color=discord.Color.red(),
                                 )
-                                embed.set_image(url=await self.get_track_cover_url(artist, track) or discord.Embed.Empty)
+                                embed.set_image(
+                                    url=await self.get_track_cover_url(artist, track)
+                                    or discord.Embed.Empty
+                                )
                                 await message.reply(embed=embed)
                             self.chat_lyric_indices[channel_id] = 0
+
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(Events(bot))

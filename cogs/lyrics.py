@@ -1,8 +1,8 @@
-import httpx        
 import discord
-
-from discord.ext import commands
+import httpx
 from discord import app_commands
+from discord.ext import commands
+
 
 class Lyrics(commands.Cog):
     def __init__(self, bot: commands.Bot):
@@ -12,7 +12,9 @@ class Lyrics(commands.Cog):
         self.chat_lyric_indices = bot.chat_lyric_indices
         self.client = httpx.AsyncClient()
 
-    @app_commands.command(name="stop", description="Stop sending lyrics in this channel")
+    @app_commands.command(
+        name="stop", description="Stop sending lyrics in this channel"
+    )
     async def stop(self, inter: discord.Interaction):
         # Check: admin or in voice channel
         member: discord.Member = inter.user  # type: ignore

@@ -4,6 +4,7 @@ from typing import Any
 
 import discord
 from discord.ext import commands
+
 try:
     from config import token  # real file (private, ignored by git)
 except ImportError:
@@ -17,6 +18,7 @@ intents.message_content = True
 intents.members = True
 intents.guilds = True
 
+
 class Bot(commands.Bot):
     def __init__(self, **kwargs: Any):
         super().__init__(**kwargs)
@@ -27,11 +29,13 @@ class Bot(commands.Bot):
 
         self.cogs_loaded: bool = False
 
+
 bot = Bot(
     command_prefix="l.",
     help_command=None,
     intents=intents,
 )
+
 
 async def load_cogs() -> None:
     cogs_dir = "cogs"
@@ -49,6 +53,7 @@ async def load_cogs() -> None:
             except Exception as e:
                 print(f"[COG] ✖ Error loading '{cog_name}': {e}")
 
+
 async def sync_commands():
     try:
         synced = await bot.tree.sync()
@@ -57,6 +62,7 @@ async def sync_commands():
     except discord.HTTPException as e:
         print(f"[CMD] Sync failed: {e}")
         return []
+
 
 @bot.event
 async def on_ready():
@@ -77,9 +83,11 @@ async def on_ready():
     bot.cogs_loaded = True
     print("[READY] Initialization complete.")
 
+
 async def main() -> None:
     async with bot:
         await bot.start(token)
+
 
 if __name__ == "__main__":
     asyncio.run(main())
