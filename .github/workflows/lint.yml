@@ -2,7 +2,7 @@ name: Pylint
 
 on:
   push:
-    branches: [main, dev] 
+    branches: [main, dev]
   pull_request:
     branches: [main, dev]
 
@@ -11,14 +11,14 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.12", "3.13"] 
+        python-version: ["3.12", "3.13"]
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4 
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -44,7 +44,7 @@ jobs:
           echo "Verifying that the bot starts without import errors..."
           python -c "import main"
 
-      - name: Analysing the code with pylint
+      - name: Analyse code with pylint
         run: |
-          pylint $(git ls-files '*.py') --exit-code=0  # Falha o job se o score for muito baixo
-        continue-on-error: false 
+          echo "Running pylint - job will fail if global score is below 8.0/10..."
+          pylint $(git ls-files '*.py') --fail-under=8.0
