@@ -32,8 +32,13 @@ jobs:
 
       - name: Basic project check
         run: |
+          echo "Creating temporary config.example.py for import test..."
+          cat << EOF > config.example.py
+          token = "fake_token_for_ci_only"
+          # Add other fake variables here if needed (e.g., prefix, owner_id, etc.)
+          EOF
           echo "Verifying that the bot starts without import errors..."
-          python -c "import main" 
+          python -c "import main"
 
       - name: Analysing the code with pylint
         run: |

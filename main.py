@@ -4,7 +4,13 @@ from typing import Any
 
 import discord
 from discord.ext import commands
-from config import token
+try:
+    from config import token  # real file (private, ignored by git)
+except ImportError:
+    try:
+        from config.example import token  # using actions
+    except ImportError:
+        raise ImportError("config.y/config.example.py not found!")
 
 intents = discord.Intents.default()
 intents.message_content = True
