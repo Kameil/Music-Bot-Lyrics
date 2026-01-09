@@ -8,8 +8,11 @@ on:
 
 jobs:
   pylint:
+    name: Pylint (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
+
     strategy:
+      fail-fast: false
       matrix:
         python-version: ["3.12", "3.13"]
 
@@ -17,34 +20,37 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+          cache: pip
 
-      - name: Upgrade pip and install dependencies
+      - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pylint
+          python -m pip install pylint
           if [ -f requirements.txt ]; then
-            pip install -r requirements.txt
+            python -m pip install -r requirements.txt
           fi
 
-      - name: Basic project check (import test)
+      - name: Create temporary config for CI
         run: |
-          echo "Creating temporary config package for import test..."
           mkdir -p config
-          cat << EOF > config/__init__.py
-          token = "fake_token_for_ci_only"
-          last_fm_application_name = "fake_application_name"
-          last_fm_API_key = "fake_api_key_1234567890"
-          last_fm_shared_secret = "fake_shared_secret_abcdef"
-          Registered_to = "CI Test Bot"
-          EOF
-          echo "Verifying that the bot starts without import errors..."
+          printf '%s\n' \
+            'TOKEN = "fake_token_for_ci_only"' \
+            'LAST_FM_APPLICATION_NAME = "fake_application_name"' \
+            'LAST_FM_API_KEY = "fake_api_key_1234567890"' \
+            'LAST_FM_SHARED_SECRET = "fake_shared_secret_abcdef"' \
+            'REGISTERED_TO = "CI Test Bot"' \
+            > config/__init__.py
+
+      - name: Basic import test
+        run: |
+          echo "Testing basic imports..."
           python -c "import main"
 
-      - name: Analyse code with pylint
+      - name: Run pylint
         run: |
-          echo "Running pylint - job will fail if global score is below 8.0/10..."
-          pylint $(git ls-files '*.py') --fail-under=8.0
+          echo "Running pylint (minimum score: 8.0)..."
+          python -m pylint $(git ls-files '*.py') --fail-under=8.0

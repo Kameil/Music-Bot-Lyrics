@@ -6,10 +6,10 @@ import discord
 from discord.ext import commands
 
 try:
-    from config import token  # real file (private, ignored by git)
+    from config import TOKEN  # real file (private, ignored by git)
 except ImportError:
     try:
-        from config.example import token  # using actions
+        from config.example import TOKEN  # using actions
     except ImportError:
         raise ImportError("config.y/config.example.py not found!")
 
@@ -86,7 +86,7 @@ async def on_ready():
 
 async def main() -> None:
     async with bot:
-        await bot.start(token)
+        await bot.start(TOKEN)
 
 
 if __name__ == "__main__":

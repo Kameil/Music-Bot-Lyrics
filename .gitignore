@@ -4,3 +4,4 @@ lteste.py
 zz
 __pycache__
 cogs/__pycache__
+.ruff_cache

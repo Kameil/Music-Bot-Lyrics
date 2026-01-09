@@ -1,7 +1,15 @@
-token = "your_token_here"
-last_fm_application_name = "your_application_name"
-last_fm_API_key = "your_API_key_here"
-last_fm_shared_secret = "your_fm_shared_secret"
-Registered_to = "your_name"
+"""
+Example configuration file for Music-Bot-Lyrics.
 
-# DELETE THIS FILE AND CREATE ONE WITH THE INFORMATION ABOVE CALLED ONLY config.py !!!
+Copy this file to `config.py` and fill in the required values.
+This file should NOT be committed with real credentials.
+"""
+
+TOKEN = "your_token_here"
+LAST_FM_APPLICATION_NAME = "your_application_name"
+LAST_FM_API_KEY = "your_api_key_here"
+LAST_FM_SHARED_SECRET = "your_fm_shared_secret"
+REGISTERED_TO = "your_name"
+
+# DELETE THIS FILE AND CREATE ONE CALLED `config.py`
+# WITH THE SAME VARIABLES FILLED WITH REAL VALUES.
